@@ -1,4 +1,6 @@
 import { k } from "./kaboomCtx";
+// import { dialogueData, scaleFactor } from "./constants";
+import { scaleFactor } from "./constants";
 k.loadSprite("spritesheet", "./spritesheet.png", {
     sliceX: 39,
     sliceY: 31,
@@ -11,3 +13,90 @@ k.loadSprite("spritesheet", "./spritesheet.png", {
         "walk-up": { from: 827, to: 828, loop: true, speed: 8 },
     },
 });
+
+k.loadSprite("map", "./map.png");
+
+k.setBackground(k.Color.fromHex("#311047"));
+
+k.scene("main", async () => {
+    // Load the map created with Tiled
+    const mapData = await (await fetch("./map.json")).json();
+    // Get the Layers from the map
+    const layers = mapData.layers;
+
+    // Create the maps as a game object
+    const map = k.add([k.sprite("map"), k.pos(0), k.scale(scaleFactor)]);
+
+    // Create player as a game object
+    const player = k.make([
+        // Add sprite
+        k.sprite("spritesheet", { anim: "idle-down" }),
+        // Add the area that contains
+        k.area({
+            shape: new k.Rect(k.vec2(0, 3), 10, 10),
+        }),
+        // Gives it body characteristics and behaviour
+        k.body(),
+        // Draw the character from the center (instead of the corners)
+        k.anchor("center"),
+        // Use the pin from the map to set the player
+        k.pos(),
+        // Multiuplying for the size defined before
+        k.scale(scaleFactor),
+        // Hold specific characteristics of this game object that can be accessed later
+        {
+            speed: 250,
+            direction: "down",
+            // Prevent the character from moving
+            isInDialogue: false,
+        },
+        // The following tag helps to identify the game object for collisions
+        "player",
+    ]);
+
+    for (const layer of layers) {
+        if (layer.name === "boundaries") {
+            for (const boundary of layer.objects) {
+                map.add([
+                    k.area({
+                        shape: new k.Rect(k.vec2(0), boundary.width, boundary.height),
+                    }),
+                    // Avoid character to overlaps boundaries
+                    k.body({ isStatic: true }),
+                    k.pos(boundary.x, boundary.y),
+                    boundary.name,
+                ]);
+
+                if (boundary.name) {
+                    player.onCollide(boundary.name, () => {
+                        player.isInDialogue = true;
+                        displayDialogue(
+                            dialogueData[boundary.name],
+                            () => (player.isInDialogue = false)
+                        );
+                    });
+                }
+            }
+
+            continue;
+        }
+
+        if (layer.name === "spawnpoints") {
+            for (const entity of layer.objects) {
+                if (entity.name === "player") {
+                    player.pos = k.vec2(
+                        (map.pos.x + entity.x) * scaleFactor,
+                        (map.pos.y + entity.y) * scaleFactor
+                    );
+                    k.add(player);
+                    continue;
+                }
+            }
+        }
+    }
+});
+
+// Excute the main scene
+k.go("main");
+
+
