@@ -56,6 +56,7 @@ k.scene("main", async () => {
     ]);
 
     for (const layer of layers) {
+        // "painting" map/objects behaviour
         if (layer.name === "boundaries") {
             for (const boundary of layer.objects) {
                 map.add([
@@ -81,7 +82,7 @@ k.scene("main", async () => {
 
             continue;
         }
-
+        // "painting" chatacter behaviour
         if (layer.name === "spawnpoints") {
             for (const entity of layer.objects) {
                 if (entity.name === "player") {
