@@ -34,3 +34,12 @@ export function displayDialogue(text, onDisplayEnd) {
         }
     });
 }
+
+export function setCamScale(k) {
+    const resizeFactor = k.width() / k.height();
+    if (resizeFactor < 1) {
+        k.camScale(k.vec2(1));
+    } else {
+        k.camScale(k.vec2(1.5));
+    }
+}
